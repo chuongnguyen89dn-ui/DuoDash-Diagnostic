@@ -27,7 +27,8 @@ static void DDDump(void) {
             UIScreen *s=screens[i];
             [o appendFormat:@"SCREEN[%lu] bounds=%@ nativeBounds=%@ scale=%.3f nativeScale=%.3f\n",(unsigned long)i,DDRect(s.bounds),DDRect(s.nativeBounds),s.scale,s.nativeScale];
         }
-        NSMutableArray<UIWindow*> *wins=[NSMutableArray array];\n        if(@available(iOS 13.0,*)){ for(UIScene *scene in app.connectedScenes) if([scene isKindOfClass:UIWindowScene.class]) [wins addObjectsFromArray:((UIWindowScene*)scene).windows]; }
+        NSMutableArray<UIWindow*> *wins=[NSMutableArray array];
+        if(@available(iOS 13.0,*)){ for(UIScene *scene in app.connectedScenes) if([scene isKindOfClass:UIWindowScene.class]) [wins addObjectsFromArray:((UIWindowScene*)scene).windows]; }
         [o appendFormat:@"windows=%lu\n",(unsigned long)wins.count];
         for(NSUInteger i=0;i<wins.count;i++){
             UIWindow *w=wins[i];
