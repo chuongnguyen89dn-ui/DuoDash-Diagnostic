@@ -1,8 +1,8 @@
 Package: com.chuong.duodashgeometryfix
 Name: DuoDash Geometry Fix
-Version: 1.1.0
+Version: 1.2.0
 Architecture: iphoneos-arm64
-Description: Fix CarPlay safe-area geometry and move the 45pt navigation sidebar off-screen for DuoDash full-screen testing
+Description: Force DuoDash built-in CarPlay fullscreen layout, zero CarPlay insets, and move the 45pt navigation sidebar off-screen
 Maintainer: chuongnguyen89dn-ui
 Author: chuongnguyen89dn-ui
 Section: Tweaks
