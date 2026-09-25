@@ -1,0 +1,9 @@
+Package: com.chuong.duodashgeometrylogger
+Name: DuoDash Geometry Logger
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: Runtime CarPlay geometry logger for DuoDash diagnostics
+Maintainer: chuongnguyen89dn-ui
+Author: chuongnguyen89dn-ui
+Section: Tweaks
+Depends: firmware (>= 15.0)
