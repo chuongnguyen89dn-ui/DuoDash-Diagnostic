@@ -9,14 +9,12 @@ static BOOL DDIsCarPlayWindow(UIWindow *w) {
     return (fabs(z.width - 427.0) < 2.0 && fabs(z.height - 240.0) < 2.0);
 }
 
+%group CarPlayFix
+
 %hook UIWindow
 - (UIEdgeInsets)safeAreaInsets {
     UIEdgeInsets insets = %orig;
-    if (DDIsCarPlayWindow(self)) {
-        // iPhone X reports 0/0/0/0 on this same 854x480 head unit.
-        // iPhone 8 incorrectly reports a 20pt bottom inset, shrinking DuoDash.
-        return UIEdgeInsetsZero;
-    }
+    if (DDIsCarPlayWindow(self)) return UIEdgeInsetsZero;
     return insets;
 }
 %end
@@ -30,7 +28,31 @@ static BOOL DDIsCarPlayWindow(UIWindow *w) {
 }
 %end
 
+// CarPlay navigation/status sidebar. The known full-screen geometry has this
+// 45pt window at x=-45 instead of x=0. Preserve the window (do not hide it)
+// but move it completely off-screen so DuoDash can use the full 427pt width.
+%hook DBStatusBarWindow
+- (void)setFrame:(CGRect)frame {
+    if (frame.size.width > 0.0) frame.origin.x = -fabs(frame.size.width);
+    %orig(frame);
+}
+- (void)layoutSubviews {
+    %orig;
+    UIWindow *w = (UIWindow *)self;
+    CGRect f = w.frame;
+    CGFloat targetX = -fabs(f.size.width);
+    if (f.size.width > 0.0 && fabs(f.origin.x - targetX) > 0.1) {
+        f.origin.x = targetX;
+        w.frame = f;
+    }
+}
+%end
+
+%end
+
 %ctor {
     NSString *p = NSProcessInfo.processInfo.processName;
-    if (![p containsString:@"CarPlay"]) return;
+    if ([p containsString:@"CarPlay"]) {
+        %init(CarPlayFix);
+    }
 }
