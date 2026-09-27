@@ -1,9 +1,9 @@
 Package: com.chuong.duodashgeometryfix
-Name: DuoDash Geometry Fix
-Version: 1.2.0
+Name: DuoDash AiraW Host Fullscreen
+Version: 1.3.0
 Architecture: iphoneos-arm64
-Description: Force DuoDash built-in CarPlay fullscreen layout, zero CarPlay insets, and move the 45pt navigation sidebar off-screen
+Description: DuoDash fullscreen host integration derived from verified AiraW CarPlay host behavior; no AiraW runtime dependency
 Maintainer: chuongnguyen89dn-ui
 Author: chuongnguyen89dn-ui
 Section: Tweaks
-Depends: firmware (>= 15.0)
+Depends: firmware (>= 15.0), com.sensetechlab.duodash
