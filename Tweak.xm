@@ -1,82 +1,80 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import <CoreFoundation/CoreFoundation.h>
+#import <objc/message.h>
+#import <objc/runtime.h>
 
-static BOOL DDIsCarPlayWindow(UIWindow *w) {
+static BOOL DDCarPlayWindow(UIWindow *w) {
     if (!w) return NO;
     UIScreen *s = w.screen;
     if (!s || s == UIScreen.mainScreen) return NO;
     CGSize z = s.bounds.size;
-    return (fabs(z.width - 427.0) < 2.0 && fabs(z.height - 240.0) < 2.0);
+    return fabs(z.width-427.0)<3.0 && fabs(z.height-240.0)<3.0;
 }
 
-static void DDForceDuoDashFullscreenPreference(void) {
-    // DuoDash 1.1.3 itself contains the supported layout values:
-    // headunit_layout_area = carplay-fullscreen ("full").
-    CFStringRef appID = CFSTR("com.sensetechlab.duodash.settings");
-    CFPreferencesSetAppValue(CFSTR("headunit_layout_area"), CFSTR("carplay-fullscreen"), appID);
-    CFPreferencesSetAppValue(CFSTR("carplay_content_insets"), CFSTR("0,0,0,0"), appID);
-    CFPreferencesSetAppValue(CFSTR("carplay_content_inset"), CFSTR("0"), appID);
-    CFPreferencesAppSynchronize(appID);
+/*
+ Evidence port from AiraW 1.7.1k:
+ AiraW injects into com.apple.CarPlayApp, handles
+ DBApplicationSceneViewController/CARApplicationSceneViewController and uses
+ the private _setFullScreenEnabled: host path.  Do not copy AiraW code/binary;
+ invoke only the host capability dynamically when that selector exists.
+*/
+static void DDEnableHostFullscreen(id obj) {
+    if (!obj) return;
+    SEL fs = NSSelectorFromString(@"_setFullScreenEnabled:");
+    if ([obj respondsToSelector:fs])
+        ((void(*)(id,SEL,BOOL))objc_msgSend)(obj,fs,YES);
 
-    // Also publish the same values in DuoDash's runtime bridge plist.
-    NSString *path = @"/var/tmp/com.sensetechlab.appbridge.plist";
-    NSMutableDictionary *d = [NSMutableDictionary dictionaryWithContentsOfFile:path];
-    if (!d) d = [NSMutableDictionary dictionary];
-    d[@"headunit_layout_area"] = @"carplay-fullscreen";
-    d[@"carplay_content_insets"] = @"0,0,0,0";
-    d[@"carplay_content_inset"] = @0;
-    [d writeToFile:path atomically:YES];
-
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"com.sensetechlab.settings.changed" object:nil];
+    UIView *v = nil;
+    if ([obj respondsToSelector:@selector(view)])
+        v = ((id(*)(id,SEL))objc_msgSend)(obj,@selector(view));
+    UIWindow *w = v.window;
+    if (DDCarPlayWindow(w)) {
+        CGRect b = w.screen.bounds;
+        w.frame = b;
+        v.frame = b;
+        v.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+    }
 }
 
-%group CarPlayFix
+%group DDHost
+%hook DBApplicationSceneViewController
+- (void)viewDidAppear:(BOOL)animated { %orig; DDEnableHostFullscreen(self); }
+- (void)viewDidLayoutSubviews { %orig; DDEnableHostFullscreen(self); }
+%end
+
+%hook CARApplicationSceneViewController
+- (void)viewDidAppear:(BOOL)animated { %orig; DDEnableHostFullscreen(self); }
+- (void)viewDidLayoutSubviews { %orig; DDEnableHostFullscreen(self); }
+%end
 
 %hook UIWindow
 - (UIEdgeInsets)safeAreaInsets {
-    UIEdgeInsets insets = %orig;
-    if (DDIsCarPlayWindow(self)) return UIEdgeInsetsZero;
-    return insets;
+    UIEdgeInsets x=%orig;
+    return DDCarPlayWindow(self)?UIEdgeInsetsZero:x;
 }
 %end
 
 %hook UIView
 - (UIEdgeInsets)safeAreaInsets {
-    UIEdgeInsets insets = %orig;
-    UIWindow *w = self.window;
-    if (DDIsCarPlayWindow(w)) return UIEdgeInsetsZero;
-    return insets;
+    UIEdgeInsets x=%orig;
+    return DDCarPlayWindow(self.window)?UIEdgeInsetsZero:x;
 }
 %end
 
 %hook DBStatusBarWindow
-- (void)setFrame:(CGRect)frame {
-    if (frame.size.width > 0.0) frame.origin.x = -fabs(frame.size.width);
-    %orig(frame);
-}
-- (void)layoutSubviews {
-    %orig;
-    UIWindow *w = (UIWindow *)self;
-    CGRect f = w.frame;
-    CGFloat targetX = -fabs(f.size.width);
-    if (f.size.width > 0.0 && fabs(f.origin.x - targetX) > 0.1) {
-        f.origin.x = targetX;
-        w.frame = f;
-    }
+- (void)setFrame:(CGRect)f {
+    if (f.size.width>0) f.origin.x=-fabs(f.size.width);
+    %orig(f);
 }
 %end
-
 %end
 
 %ctor {
-    NSString *p = NSProcessInfo.processInfo.processName;
-    if ([p containsString:@"CarPlay"]) {
-        DDForceDuoDashFullscreenPreference();
-        %init(CarPlayFix);
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)),
-                       dispatch_get_main_queue(), ^{
-            DDForceDuoDashFullscreenPreference();
-        });
+    NSString *bid=NSBundle.mainBundle.bundleIdentifier ?: @"";
+    NSString *proc=NSProcessInfo.processInfo.processName ?: @"";
+    if ([bid isEqualToString:@"com.apple.CarPlayApp"] ||
+        [bid isEqualToString:@"com.apple.CarPlay"] ||
+        [proc containsString:@"CarPlay"]) {
+        %init(DDHost);
     }
 }
