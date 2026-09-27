@@ -38,13 +38,25 @@ static void DDEnableHostFullscreen(id obj) {
 
 %group DDHost
 %hook DBApplicationSceneViewController
-- (void)viewDidAppear:(BOOL)animated {\n    %orig;\n    DDEnableHostFullscreen(self);\n}
-- (void)viewDidLayoutSubviews {\n    %orig;\n    DDEnableHostFullscreen(self);\n}
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    DDEnableHostFullscreen(self);
+}
+- (void)viewDidLayoutSubviews {
+    %orig;
+    DDEnableHostFullscreen(self);
+}
 %end
 
 %hook CARApplicationSceneViewController
-- (void)viewDidAppear:(BOOL)animated {\n    %orig;\n    DDEnableHostFullscreen(self);\n}
-- (void)viewDidLayoutSubviews {\n    %orig;\n    DDEnableHostFullscreen(self);\n}
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    DDEnableHostFullscreen(self);
+}
+- (void)viewDidLayoutSubviews {
+    %orig;
+    DDEnableHostFullscreen(self);
+}
 %end
 
 %hook UIWindow
