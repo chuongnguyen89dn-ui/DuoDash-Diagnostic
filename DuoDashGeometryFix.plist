@@ -1,7 +1,8 @@
 {
   Filter = {
     Bundles = (
-      "com.apple.CarPlay"
+      "com.apple.CarPlay",
+      "com.apple.CarPlayApp"
     );
   };
 }
