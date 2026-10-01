@@ -1,0 +1,7 @@
+TIEP TUC DU AN — DUODASH DIAGNOSTIC
+
+CAP NHAT 2026-10-02
+- Repo: chuongnguyen89dn-ui/DuoDash-Diagnostic.
+- Muc tieu: runtime geometry logger de so sanh layout CarPlay tren iPhone 8 va iPhone X.
+- Day la cong cu chan doan phuc vu he thong CarPlay, khong tach thanh san pham doc lap khi thong ke du an CarPlay.
+- Khi co log/geometry test moi, append ket qua va thiet bi/boi canh test; khong ghi thanh cong neu chua co runtime evidence.
