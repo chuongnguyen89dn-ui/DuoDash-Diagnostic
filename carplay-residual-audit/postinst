@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+APP="/var/jb/Applications/CarPlayAudit.app"
+if command -v uicache >/dev/null 2>&1; then
+  uicache -p "$APP" >/dev/null 2>&1 || uicache -a >/dev/null 2>&1 || true
+elif [ -x /var/jb/usr/bin/uicache ]; then
+  /var/jb/usr/bin/uicache -p "$APP" >/dev/null 2>&1 || true
+fi
+# Never respring automatically; preserve CarPlay scene and user state.
+exit 0

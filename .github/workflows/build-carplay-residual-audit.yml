@@ -1,0 +1,47 @@
+name: Build CarPlay Residual Audit (no Sileo publish)
+on:
+  push:
+    branches: [feature/carplay-residual-audit]
+    paths:
+      - 'carplay-residual-audit/**'
+      - '.github/workflows/build-carplay-residual-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate sources and packaging manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 carplay-residual-audit/test_static.py
+          plutil -lint carplay-residual-audit/Info.plist carplay-residual-audit/entitlements.plist
+          test -s carplay-residual-audit/CarPlayRuntimeProbe.plist
+      - name: Install packaging dependencies
+        run: |
+          brew install ldid dpkg
+          xcrun --sdk iphoneos --show-sdk-path
+          command -v ldid
+          command -v dpkg-deb
+      - name: Build and verify arm64 rootless package
+        run: |
+          bash carplay-residual-audit/build.sh
+          P='carplay-residual-audit/packages/com.chuong.carplayaudit_0.1.0_iphoneos-arm64.deb'
+          test -s "$P"
+          test "$(dpkg-deb -f "$P" Package)" = 'com.chuong.carplayaudit'
+          test "$(dpkg-deb -f "$P" Architecture)" = 'iphoneos-arm64'
+          dpkg-deb -c "$P" | grep '/var/jb/Applications/CarPlayAudit.app/CarPlayAudit'
+          dpkg-deb -c "$P" | grep '/var/jb/Library/MobileSubstrate/DynamicLibraries/CarPlayRuntimeProbe.dylib'
+          dpkg-deb -c "$P" | grep '/var/jb/Library/MobileSubstrate/DynamicLibraries/CarPlayRuntimeProbe.plist'
+          cd carplay-residual-audit/packages
+          shasum -a 256 -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CarPlayResidualAudit-rootless-readonly
+          path: |
+            carplay-residual-audit/packages/*.deb
+            carplay-residual-audit/packages/SHA256SUMS.txt
+          if-no-files-found: error
