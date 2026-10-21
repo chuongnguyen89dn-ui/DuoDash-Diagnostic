@@ -1,6 +1,8 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
+extern void CPAWriteOwnershipAudit(NSMutableString *out);
+
 static NSArray<NSString *> *CPATokens(void) {
     return @[@"duodash", @"airaw", @"airaw", @"carnav", @"carbridge", @"duoface",
              @"duonavi", @"omnicar", @"sideplay", @"geometryfix", @"carplaydsp",
@@ -129,13 +131,14 @@ static void CPAReadRuntime(NSMutableString *out) {
 }
 static NSString *CPABuildReport(void) {
     NSMutableString *out = [NSMutableString string];
-    CPAAdd(out,@"CarPlay Residual Audit v0.1 - READ ONLY");
+    CPAAdd(out,@"CarPlay Residual Audit v0.2 - READ ONLY");
     CPAAdd(out,@"Collected %@ device=%@ iOS=%@",[NSDate date],UIDevice.currentDevice.model,UIDevice.currentDevice.systemVersion);
-    CPAAdd(out,@"Purpose: determine DuoDash/Airaw/other CarPlay tweak residue, packaging and injection.");
+    CPAAdd(out,@"Purpose: determine installed package ownership, filesystem injections, and CarPlay geometry.");
     CPAAdd(out,@"Evidence levels: INSTALLED (dpkg), ON_DISK (file), PROBE (dyld image). No automatic deletion.");
     CPAReadPackages(out);
     CPAReadFilesystem(out);
     CPAReadRuntime(out);
+    CPAWriteOwnershipAudit(out);
     CPAAdd(out,@"\n=== INTERPRETATION ===");
     CPAAdd(out,@"INSTALLED is not equal to loaded. ON_DISK is not equal to loaded.");
     CPAAdd(out,@"PROBE IMAGE records are stronger evidence of current/past injection, inspect process and timestamp.");
