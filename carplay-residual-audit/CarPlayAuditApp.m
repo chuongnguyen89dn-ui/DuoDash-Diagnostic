@@ -146,9 +146,24 @@ static void CPAReadAttribution(NSMutableString *out) {
     for (NSUInteger i=start;i<lines.count;i++) if ([lines[i] length]) CPAAdd(out,@"%@",lines[i]);
     CPAAdd(out,@"TRACE_NOTE: Caller stack/HOOK_CHAIN show code-path evidence, not conclusive blame.");
 }
+static void CPAReadHomeTrace(NSMutableString *out) {
+    CPAAdd(out,@"\n=== 6. CARPLAY HOME / APP SWITCH TOUCH TRACE (OPT-IN) ===");
+    NSString *p=[CPAReportsDirectory() stringByAppendingPathComponent:@"CarPlayHomeTouchTrace.log"];
+    NSString *log=CPARead(p);
+    if (!log.length) {
+        CPAAdd(out,@"HOME_TRACE_MISSING. Tap ARM; respring; reproduce failure; then mark HOME KET or APP KET.");
+        return;
+    }
+    NSDictionary *attr=[NSFileManager.defaultManager attributesOfItemAtPath:p error:nil];
+    CPAAdd(out,@"HOME_TRACE_FILE %@ modified=%@ bytes=%@",p,attr[NSFileModificationDate],attr[NSFileSize]);
+    NSArray *lines=[log componentsSeparatedByString:@"\n"];
+    NSUInteger start=lines.count>900 ? lines.count-900 : 0;
+    for (NSUInteger i=start;i<lines.count;i++) if([lines[i] length]) CPAAdd(out,@"%@",lines[i]);
+    CPAAdd(out,@"HOME_TRACE_NOTE: a visible button may still miss touches; a dispatched action is not proof the CarPlay host accepted it.");
+}
 static NSString *CPABuildReport(void) {
     NSMutableString *out = [NSMutableString string];
-    CPAAdd(out,@"CarPlay Residual Audit v0.3 - READ ONLY");
+    CPAAdd(out,@"CarPlay Residual Audit v0.4 - READ ONLY");
     CPAAdd(out,@"Collected %@ device=%@ iOS=%@",[NSDate date],UIDevice.currentDevice.model,UIDevice.currentDevice.systemVersion);
     CPAAdd(out,@"Purpose: determine installed package ownership, filesystem injections, and CarPlay geometry.");
     CPAAdd(out,@"Evidence levels: INSTALLED (dpkg), ON_DISK (file), PROBE (dyld image). No automatic deletion.");
@@ -157,6 +172,7 @@ static NSString *CPABuildReport(void) {
     CPAReadRuntime(out);
     CPAWriteOwnershipAudit(out);
     CPAReadAttribution(out);
+    CPAReadHomeTrace(out);
     CPAAdd(out,@"\n=== INTERPRETATION ===");
     CPAAdd(out,@"INSTALLED is not equal to loaded. ON_DISK is not equal to loaded.");
     CPAAdd(out,@"PROBE IMAGE records are stronger evidence of current/past injection, inspect process and timestamp.");
@@ -171,6 +187,8 @@ static NSString *CPABuildReport(void) {
 @property(nonatomic,strong) UIButton *normalButton;
 @property(nonatomic,strong) UIButton *zoomButton;
 @property(nonatomic,strong) UIButton *stopButton;
+@property(nonatomic,strong) UIButton *homeFailButton;
+@property(nonatomic,strong) UIButton *appFailButton;
 @property(nonatomic,strong) NSURL *reportURL;
 @end
 @implementation CPAViewController
@@ -194,7 +212,7 @@ static NSString *CPABuildReport(void) {
     titleLabel.font = [UIFont boldSystemFontOfSize:25];
     UILabel *info = [UILabel new];
     info.translatesAutoresizingMaskIntoConstraints = NO;
-    info.text = @"0.3 · Truy vết chính xác: gói sở hữu dylib, khung CarPlay, đường gọi setter. Chỉ đọc, không chỉnh giao diện.";
+    info.text = @"0.4 · Truy vết chạm Home, mở app và đường gọi CarPlay. Chỉ quan sát, không điều hướng thay.";
     info.numberOfLines = 0;
     info.font = [UIFont systemFontOfSize:14];
     self.scanButton = [self makeButton:@"QUÉT MÁY" selector:@selector(scanTapped)];
@@ -203,9 +221,15 @@ static NSString *CPABuildReport(void) {
     self.normalButton = [self makeButton:@"2. MỐC THƯỜNG" selector:@selector(normalTapped)];
     self.zoomButton = [self makeButton:@"3. MỐC ZOOM IN" selector:@selector(zoomTapped)];
     self.stopButton = [self makeButton:@"4. DỪNG TRUY VẾT" selector:@selector(stopTapped)];
+    self.homeFailButton = [self makeButton:@"HOME KẸT" selector:@selector(homeFailTapped)];
+    self.appFailButton = [self makeButton:@"APP KẸT" selector:@selector(appFailTapped)];
     for (UIButton *b in @[self.armButton,self.normalButton,self.zoomButton,self.stopButton])
         b.titleLabel.font=[UIFont boldSystemFontOfSize:13];
     self.stopButton.backgroundColor = UIColor.systemGrayColor;
+    self.homeFailButton.titleLabel.font=[UIFont boldSystemFontOfSize:13];
+    self.appFailButton.titleLabel.font=[UIFont boldSystemFontOfSize:13];
+    self.homeFailButton.backgroundColor=UIColor.systemOrangeColor;
+    self.appFailButton.backgroundColor=UIColor.systemOrangeColor;
     self.shareButton.enabled = NO;
     self.shareButton.alpha = 0.5;
     self.output = [UITextView new];
@@ -214,8 +238,8 @@ static NSString *CPABuildReport(void) {
     self.output.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
     self.output.backgroundColor = UIColor.secondarySystemBackgroundColor;
     self.output.layer.cornerRadius = 10;
-    self.output.text = @"Bật truy vết, respring thủ công, kết nối CarPlay. Khi màn hình bình thường: nhấn MỐC THƯỜNG. Sau đó bật Zoom In và nhấn MỐC ZOOM IN. Cuối cùng DỪNG, QUÉT MÁY, CHIA SẺ BÁO CÁO.\n\nChức năng truy vết chỉ bật theo yêu cầu; ngừng sau tối đa 5 phút hoặc 240 sự kiện. Không sửa vùng hiển thị.";
-    for (UIView *v in @[titleLabel,info,self.armButton,self.normalButton,self.zoomButton,self.stopButton,self.scanButton,self.shareButton,self.output])
+    self.output.text = @"Bật truy vết, respring và kết nối CarPlay. Thử chuyển về Home và mở app khác. Khi lỗi xảy ra, nhấn HOME KẸT hoặc APP KẸT trên iPhone để đánh dấu. Cuối cùng DỪNG, QUÉT MÁY, CHIA SẺ BÁO CÁO.\n\nChức năng truy vết chỉ bật theo yêu cầu; ngừng sau tối đa 5 phút hoặc 240 sự kiện. Không sửa vùng hiển thị.";
+    for (UIView *v in @[titleLabel,info,self.armButton,self.normalButton,self.zoomButton,self.stopButton,self.homeFailButton,self.appFailButton,self.scanButton,self.shareButton,self.output])
         [self.view addSubview:v];
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
@@ -241,7 +265,15 @@ static NSString *CPABuildReport(void) {
         [self.stopButton.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
         [self.stopButton.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
         [self.stopButton.heightAnchor constraintEqualToConstant:38],
-        [self.scanButton.topAnchor constraintEqualToAnchor:self.stopButton.bottomAnchor constant:9],
+        [self.homeFailButton.topAnchor constraintEqualToAnchor:self.stopButton.bottomAnchor constant:7],
+        [self.homeFailButton.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
+        [self.homeFailButton.heightAnchor constraintEqualToConstant:38],
+        [self.appFailButton.topAnchor constraintEqualToAnchor:self.homeFailButton.topAnchor],
+        [self.appFailButton.leadingAnchor constraintEqualToAnchor:self.homeFailButton.trailingAnchor constant:7],
+        [self.appFailButton.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
+        [self.appFailButton.widthAnchor constraintEqualToAnchor:self.homeFailButton.widthAnchor],
+        [self.appFailButton.heightAnchor constraintEqualToConstant:38],
+        [self.scanButton.topAnchor constraintEqualToAnchor:self.homeFailButton.bottomAnchor constant:9],
         [self.scanButton.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
         [self.scanButton.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
         [self.scanButton.heightAnchor constraintEqualToConstant:42],
@@ -283,6 +315,18 @@ static NSString *CPABuildReport(void) {
 - (void)zoomTapped {
     [self logMarker:@"PHASE_ZOOM_IN"];
 }
+- (void)markHomeProblem:(NSString *)name {
+    [self logMarker:name];
+    NSString *p=[CPAReportsDirectory() stringByAppendingPathComponent:@"CarPlayHomeTouchTrace.log"];
+    int fd=open(p.fileSystemRepresentation,O_WRONLY|O_CREAT|O_APPEND,0644);
+    if(fd<0)return;
+    NSString *line=[NSString stringWithFormat:@"%.3f pid=%d USER_MARK %@\n",
+                     NSDate.date.timeIntervalSince1970,getpid(),name];
+    NSData *d=[line dataUsingEncoding:NSUTF8StringEncoding];
+    write(fd,d.bytes,d.length);close(fd);
+}
+- (void)homeFailTapped { [self markHomeProblem:@"HOME_UNRESPONSIVE"]; }
+- (void)appFailTapped { [self markHomeProblem:@"APP_SWITCH_UNRESPONSIVE"]; }
 - (void)stopTapped {
     NSString *p=[CPAReportsDirectory() stringByAppendingPathComponent:@"AttributionEnabled"];
     [[NSFileManager defaultManager] removeItemAtPath:p error:nil];
