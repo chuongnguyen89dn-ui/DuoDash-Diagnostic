@@ -11,8 +11,8 @@
 #import <time.h>
 #import <dispatch/dispatch.h>
 
-static NSString * const kCPAHomeTrace="/var/mobile/Documents/CarPlayAudit/CarPlayHomeTouchTrace.log";
-static NSString * const kCPAHomeArm="/var/mobile/Documents/CarPlayAudit/AttributionEnabled";
+static NSString * const kCPAHomeTrace=@"/var/mobile/Documents/CarPlayAudit/CarPlayHomeTouchTrace.log";
+static NSString * const kCPAHomeArm=@"/var/mobile/Documents/CarPlayAudit/AttributionEnabled";
 static dispatch_queue_t CPAHomeWriter;
 static BOOL CPAHomeEnabled = NO;
 static time_t CPAHomeExpire = 0;
