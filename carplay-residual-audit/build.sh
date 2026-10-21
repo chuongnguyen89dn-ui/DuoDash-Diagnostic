@@ -12,7 +12,7 @@ INJECT="$ROOT/var/jb/Library/MobileSubstrate/DynamicLibraries"
 xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" \
  -miphoneos-version-min=16.0 -fobjc-arc -fmodules -O2 \
  -framework Foundation -framework UIKit \
- "$HERE/CarPlayAuditApp.m" -o "$APP/CarPlayAudit"
+ "$HERE/CarPlayAuditApp.m" "$HERE/CPAOwnership.m" -o "$APP/CarPlayAudit"
 xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" \
  -miphoneos-version-min=16.0 -fobjc-arc -fmodules -O2 \
  -dynamiclib -framework Foundation -framework UIKit \
@@ -27,8 +27,8 @@ cp "$HERE/prerm" "$ROOT/DEBIAN/prerm"
 chmod 755 "$APP/CarPlayAudit" "$INJECT/CarPlayRuntimeProbe.dylib" \
  "$ROOT/DEBIAN/postinst" "$ROOT/DEBIAN/prerm"
 dpkg-deb --build --root-owner-group "$ROOT" \
- "$OUT/com.chuong.carplayaudit_0.1.0_iphoneos-arm64.deb"
-dpkg-deb -I "$OUT/com.chuong.carplayaudit_0.1.0_iphoneos-arm64.deb"
-dpkg-deb -c "$OUT/com.chuong.carplayaudit_0.1.0_iphoneos-arm64.deb"
-shasum -a 256 "$OUT/com.chuong.carplayaudit_0.1.0_iphoneos-arm64.deb" \
+ "$OUT/com.chuong.carplayaudit_0.2.0_iphoneos-arm64.deb"
+dpkg-deb -I "$OUT/com.chuong.carplayaudit_0.2.0_iphoneos-arm64.deb"
+dpkg-deb -c "$OUT/com.chuong.carplayaudit_0.2.0_iphoneos-arm64.deb"
+shasum -a 256 "$OUT/com.chuong.carplayaudit_0.2.0_iphoneos-arm64.deb" \
  > "$OUT/SHA256SUMS.txt"
