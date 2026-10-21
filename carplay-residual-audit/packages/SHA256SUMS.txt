@@ -1,1 +1,1 @@
-97bc148294c1b72a7a045d89fde3d17ee1ea2d77bad5a91eb4d4c2fb6b9715ff  /Users/runner/work/DuoDash-Diagnostic/DuoDash-Diagnostic/carplay-residual-audit/packages/com.chuong.carplayaudit_0.2.0_iphoneos-arm64.deb
+ef8aa3a146c91f9684e146f064bfed403e08623aabb7181a6cba7e206c8db545  /Users/runner/work/DuoDash-Diagnostic/DuoDash-Diagnostic/carplay-residual-audit/packages/com.chuong.carplayaudit_0.3.0_iphoneos-arm64.deb
