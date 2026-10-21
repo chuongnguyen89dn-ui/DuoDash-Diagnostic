@@ -150,6 +150,8 @@ static void CPAReadHomeTrace(NSMutableString *out) {
     CPAAdd(out,@"\n=== 6. CARPLAY HOME / APP SWITCH TOUCH TRACE (OPT-IN) ===");
     NSString *p=[CPAReportsDirectory() stringByAppendingPathComponent:@"CarPlayHomeTouchTrace.log"];
     NSString *log=CPARead(p);
+    NSString *prior=CPARead([CPAReportsDirectory() stringByAppendingPathComponent:@"CarPlayHomeTouchTrace.previous.log"]);
+    if(prior.length) log=[NSString stringWithFormat:@"%@\n%@",prior,log?:@""];
     if (!log.length) {
         CPAAdd(out,@"HOME_TRACE_MISSING. Tap ARM; respring; reproduce failure; then mark HOME KET or APP KET.");
         return;
@@ -157,13 +159,14 @@ static void CPAReadHomeTrace(NSMutableString *out) {
     NSDictionary *attr=[NSFileManager.defaultManager attributesOfItemAtPath:p error:nil];
     CPAAdd(out,@"HOME_TRACE_FILE %@ modified=%@ bytes=%@",p,attr[NSFileModificationDate],attr[NSFileSize]);
     NSArray *lines=[log componentsSeparatedByString:@"\n"];
-    NSUInteger start=lines.count>900 ? lines.count-900 : 0;
+    NSUInteger start=lines.count>2500 ? lines.count-2500 : 0;
     for (NSUInteger i=start;i<lines.count;i++) if([lines[i] length]) CPAAdd(out,@"%@",lines[i]);
-    CPAAdd(out,@"HOME_TRACE_NOTE: a visible button may still miss touches; a dispatched action is not proof the CarPlay host accepted it.");
+    CPAAdd(out,@"HOME_TRACE_NOTE: Last rolling 2x256KiB only; older events may be overwritten. Touch or action dispatch is not a scene-activation acknowledgement.");
+    CPAAdd(out,@"HOME_TRACE_MODE: 72-hour opt-in, no forced reproduction; TRACE_STARTED must appear for active process.");
 }
 static NSString *CPABuildReport(void) {
     NSMutableString *out = [NSMutableString string];
-    CPAAdd(out,@"CarPlay Residual Audit v0.4 - READ ONLY");
+    CPAAdd(out,@"CarPlay Residual Audit v0.5 - READ ONLY");
     CPAAdd(out,@"Collected %@ device=%@ iOS=%@",[NSDate date],UIDevice.currentDevice.model,UIDevice.currentDevice.systemVersion);
     CPAAdd(out,@"Purpose: determine installed package ownership, filesystem injections, and CarPlay geometry.");
     CPAAdd(out,@"Evidence levels: INSTALLED (dpkg), ON_DISK (file), PROBE (dyld image). No automatic deletion.");
@@ -212,12 +215,12 @@ static NSString *CPABuildReport(void) {
     titleLabel.font = [UIFont boldSystemFontOfSize:25];
     UILabel *info = [UILabel new];
     info.translatesAutoresizingMaskIntoConstraints = NO;
-    info.text = @"0.4 · Truy vết chạm Home, mở app và đường gọi CarPlay. Chỉ quan sát, không điều hướng thay.";
+    info.text = @"0.5 · Ghi Home / đổi ứng dụng tối đa 72 giờ sau khi bật, lưu log xoay vòng, không sửa DuoFace.";
     info.numberOfLines = 0;
     info.font = [UIFont systemFontOfSize:14];
     self.scanButton = [self makeButton:@"QUÉT MÁY" selector:@selector(scanTapped)];
     self.shareButton = [self makeButton:@"CHIA SẺ BÁO CÁO" selector:@selector(shareTapped)];
-    self.armButton = [self makeButton:@"1. BẬT TRUY VẾT (5 PHÚT)" selector:@selector(armTapped)];
+    self.armButton = [self makeButton:@"1. BẬT GHI LOG (72 GIỜ)" selector:@selector(armTapped)];
     self.normalButton = [self makeButton:@"2. MỐC THƯỜNG" selector:@selector(normalTapped)];
     self.zoomButton = [self makeButton:@"3. MỐC ZOOM IN" selector:@selector(zoomTapped)];
     self.stopButton = [self makeButton:@"4. DỪNG TRUY VẾT" selector:@selector(stopTapped)];
@@ -238,7 +241,7 @@ static NSString *CPABuildReport(void) {
     self.output.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
     self.output.backgroundColor = UIColor.secondarySystemBackgroundColor;
     self.output.layer.cornerRadius = 10;
-    self.output.text = @"Bật truy vết, respring và kết nối CarPlay. Thử chuyển về Home và mở app khác. Khi lỗi xảy ra, nhấn HOME KẸT hoặc APP KẸT trên iPhone để đánh dấu. Cuối cùng DỪNG, QUÉT MÁY, CHIA SẺ BÁO CÁO.\n\nChức năng truy vết chỉ bật theo yêu cầu; ngừng sau tối đa 5 phút hoặc 240 sự kiện. Không sửa vùng hiển thị.";
+    self.output.text = @"Bật ghi log, respring một lần và dùng CarPlay bình thường. KHÔNG cần thử liên tục. Khi lỗi bất chợt xảy ra, nhấn HOME KẸT hoặc APP KẸT trên iPhone, rồi DỪNG / QUÉT MÁY / CHIA SẺ.\n\nTheo dõi cảm ứng tối đa 72 giờ, lưu 2 file khoảng 256KB mỗi file. Truy vết frame cũ chỉ chạy 5 phút. Không chỉnh DuoFace.";
     for (UIView *v in @[titleLabel,info,self.armButton,self.normalButton,self.zoomButton,self.stopButton,self.homeFailButton,self.appFailButton,self.scanButton,self.shareButton,self.output])
         [self.view addSubview:v];
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
@@ -307,7 +310,7 @@ static NSString *CPABuildReport(void) {
     BOOL ok=[@"enabled" writeToFile:p atomically:YES encoding:NSUTF8StringEncoding error:&err];
     if (!ok) { self.output.text=[NSString stringWithFormat:@"Bật truy vết thất bại: %@",err]; return; }
     [self logMarker:@"ARMED_REQUEST; RESPRING_NOW to start new CarPlay process"];
-    self.output.text=@"Đã bật chế độ truy vết. Respring thủ công và kết nối CarPlay trong 5 phút; sau đó mở lại ứng dụng để đánh dấu THƯỜNG / ZOOM IN.";
+    self.output.text=@"Đã bật ghi log. Respring một lần, sử dụng CarPlay bình thường trong tối đa 72 giờ. Khi lỗi xảy ra, đánh dấu HOME KẸT hoặc APP KẸT; xuất báo cáo ngay sau đó.";
 }
 - (void)normalTapped {
     [self logMarker:@"PHASE_NORMAL"];

@@ -32,7 +32,7 @@ jobs:
       - name: Build and verify arm64 rootless package
         run: |
           bash carplay-residual-audit/build.sh
-          P='carplay-residual-audit/packages/com.chuong.carplayaudit_0.4.0_iphoneos-arm64.deb'
+          P='carplay-residual-audit/packages/com.chuong.carplayaudit_0.5.0_iphoneos-arm64.deb'
           test -s "$P"
           test "$(dpkg-deb -f "$P" Package)" = 'com.chuong.carplayaudit'
           test "$(dpkg-deb -f "$P" Architecture)" = 'iphoneos-arm64'
@@ -43,7 +43,7 @@ jobs:
           shasum -a 256 -c SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: CarPlayResidualAudit-0.4-rootless-readonly
+          name: CarPlayResidualAudit-0.5-rootless-readonly
           path: |
             carplay-residual-audit/packages/*.deb
             carplay-residual-audit/packages/SHA256SUMS.txt
@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f carplay-residual-audit/packages/com.chuong.carplayaudit_0.4.0_iphoneos-arm64.deb
+          git add -f carplay-residual-audit/packages/com.chuong.carplayaudit_0.5.0_iphoneos-arm64.deb
           git add -f carplay-residual-audit/packages/SHA256SUMS.txt
-          git commit -m "artifact: persist verified CarPlay Audit 0.4 DEB [skip ci]"
+          git commit -m "artifact: persist verified CarPlay Audit 0.5 DEB [skip ci]"
           git push origin HEAD:feature/carplay-residual-audit

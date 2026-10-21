@@ -27,8 +27,8 @@ cp "$HERE/prerm" "$ROOT/DEBIAN/prerm"
 chmod 755 "$APP/CarPlayAudit" "$INJECT/CarPlayRuntimeProbe.dylib" \
  "$ROOT/DEBIAN/postinst" "$ROOT/DEBIAN/prerm"
 dpkg-deb --build --root-owner-group "$ROOT" \
- "$OUT/com.chuong.carplayaudit_0.4.0_iphoneos-arm64.deb"
-dpkg-deb -I "$OUT/com.chuong.carplayaudit_0.4.0_iphoneos-arm64.deb"
-dpkg-deb -c "$OUT/com.chuong.carplayaudit_0.4.0_iphoneos-arm64.deb"
-shasum -a 256 "$OUT/com.chuong.carplayaudit_0.4.0_iphoneos-arm64.deb" \
+ "$OUT/com.chuong.carplayaudit_0.5.0_iphoneos-arm64.deb"
+dpkg-deb -I "$OUT/com.chuong.carplayaudit_0.5.0_iphoneos-arm64.deb"
+dpkg-deb -c "$OUT/com.chuong.carplayaudit_0.5.0_iphoneos-arm64.deb"
+shasum -a 256 "$OUT/com.chuong.carplayaudit_0.5.0_iphoneos-arm64.deb" \
  > "$OUT/SHA256SUMS.txt"
