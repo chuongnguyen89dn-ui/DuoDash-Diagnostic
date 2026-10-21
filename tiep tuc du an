@@ -19,3 +19,14 @@ CAP NHAT 2026-10-21 — CARPLAY RESIDUAL AUDIT 0.1 (CONFIRMED CI / DEVICE UNVERI
 - Nguon Sileo https://chuongnguyen89dn-ui.github.io/carplaydsp/ (khong thay doi package DuoFace khac).
 - THIET BI: CHUA KIEM THU. Khong duoc suy doan da lay duoc log/da xac dinh tweak xung dot.
 - Buoc tiep: nguoi dung lam moi Sileo, cai CarPlay Residual Audit, respring thu cong 1 lan, ket noi CarPlay/tai hien loi, mo app tren iPhone bam QUET MAY > CHIA SE BAO CAO, gui TXT. Neu khong co PROBE_LOADED tu CarPlay thi ghi UNVERIFIED; khong tu dong xoa/tat tweak.
+
+CAP NHAT 2026-10-21 — CARPLAY RESIDUAL AUDIT V0.2 (CI VERIFIED + SILEO DEPLOY VERIFIED)
+- User confirmed deleted DuoDash/Airaw residual directories with NO resolution of CarPlay white bar. Do not blame deleted data. Priority changed to ownership of injected code and actual host geometry.
+- First real 0.1 user report verified CarPlay pid=13564 loaded DuoFaceDashboard.dylib, DuoFaceFullscreenBridge.dylib, DuoFaceLogoGripOnly.dylib, DuoFaceVisualHook.dylib; DuoDash and Airaw names not found. 374 installed dpkg packages; 3 matched names. Runtime CarPlay secondary UIScreen bounds 640x342.6667 pt nativeBounds 1920x1028 scale3.
+- v0.2 code adds CPAOwnership.m reading /var/jb/var/lib/dpkg/status and /var/jb/var/lib/dpkg/info/*.list to connect package names to actual injected dylib/plist paths, report PACKAGE_OWNER installed/not-installed and NO_DPKG_FILE_OWNER. Missing metadata is not proof of an orphan; no deletions.
+- Runtime geometry sampling: passive dispatch timer only in CarPlay/Dashboard, outputs GEOMETRY_SNAPSHOT / WINDOW / VIEW with frame,bounds,safeAreaInsets, class, hidden, UIScreen bounds. No swizzles, setters, or geometry modifications.
+- Source commits begin a0d2359f37ac516524f3abc1fbe5e25d8558666e, latest patch 491a1866fd843280b58ade2da6556c615ed2d4fd.
+- macOS CI https://github.com/chuongnguyen89dn-ui/DuoDash-Diagnostic/actions/runs/39598390191 SUCCESS. Signed arm64 rootless DEB saved in source branch, pin commit a03a656cc79e96ef0fd72a81855a90c4540031cb.
+- Package com.chuong.carplayaudit 0.2.0, SHA256 ee05d4869163e55600922451cce65425db394de4ed60cb4ebf8dd11ed9b554c0.
+- Sileo publisher chuongnguyen89dn-ui/carplaydsp commit f32e3d1cf09bbb926158146926449de7eb06727d, run https://github.com/chuongnguyen89dn-ui/carplaydsp/actions/runs/39598528382 BUILD + DEPLOY + VERIFY ALL SUCCESS; log confirms 0.2.0 SHA PASS and Packages includes it.
+- ON-DEVICE v0.2 STILL UNVERIFIED. Refresh Sileo source https://chuongnguyen89dn-ui.github.io/carplaydsp/, update CarPlay Residual Audit 0.2.0, respring, connect CarPlay, observe ordinary then Zoom In each >10 seconds, press Quet May > Chia Se Bao Cao. Need report OWNER and GEOMETRY sections to identify system injected culprits.
