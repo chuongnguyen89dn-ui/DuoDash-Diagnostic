@@ -159,7 +159,7 @@ static void CPAProbeStart(void) {
     @autoreleasepool {
         CPALogQueue = dispatch_queue_create("com.chuong.carplayaudit.log", DISPATCH_QUEUE_SERIAL);
         dispatch_async(CPALogQueue, ^{
-            CPAAppendFile(@"PROBE_LOADED injection=yes version=0.3");
+            CPAAppendFile(@"PROBE_LOADED injection=yes version=0.4");
             CPAAppendFile([NSString stringWithFormat:@"BUNDLE_ID %@",
                   NSBundle.mainBundle.bundleIdentifier ?: @"(none)"]);
         });

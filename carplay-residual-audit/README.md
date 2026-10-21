@@ -62,3 +62,10 @@ Never publish to Sileo before verifying package metadata, expected payload and C
 - Trace evidence file: `/var/mobile/Documents/CarPlayAudit/CarPlayAttributionTrace.log`; log records include `TRACE_BEGIN`, `HOOK_CHAIN`, `CALLER_GEOMETRY`, `SAFEAREA_NOTIFICATION`, `EXPLICIT_ADDITIONAL_SAFEAREA`, `USER_MARK`, `TRACE_END`.
 - A caller stack or UIKit notification indicates a call path, NOT conclusive assignment of blame. If the 20pt inset is system-provided at startup and never set explicitly, this probe may not identify a setter.
 - Test without jailbreak/injection is a different baseline and cannot be produced inside injected CarPlay; do not pretend this captures a clean baseline.
+
+## v0.4 HOME / app-switch touch trace
+- Diagnostic reports observed CarPlay UIWindow \`sendEvent:\`, \`hitTest:withEvent:\`, UIApplication/UIControl \`sendAction...\`, and user-confirmed failure markers, with previous IMPs called normally.
+- When installed and armed, restart CarPlay within 5 minutes. On an OFF-ROAD / parked vehicle, reproduce failure to return to CarPlay Home or open another app, then tap HOME KẸT / APP KẸT on the iPhone, followed by STOP / QUÉT MÁY / share.
+- Output is \`/var/mobile/Documents/CarPlayAudit/CarPlayHomeTouchTrace.log\`, embedded in exported TXT section 6.
+- The trace does NOT navigate to Home, alter gesture recognizers or activate arbitrary apps.
+- If touch events never reach CarPlay process, this is one possible clue, NOT conclusive blocking (CarPlay input may route through another process).

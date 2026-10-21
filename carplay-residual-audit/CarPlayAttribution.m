@@ -180,7 +180,7 @@ static void CPAInstallAttribution(void) {
         gCPAWriter=dispatch_queue_create("com.chuong.carplayaudit.attribution",DISPATCH_QUEUE_SERIAL);
         gCPAArmed=YES;
         gCPAUntil=time(NULL)+300;
-        CPAWriteTrace(@"TRACE_BEGIN v0.3 read-only five-minute bounded probe");
+        CPAWriteTrace(@"TRACE_BEGIN v0.4 read-only five-minute bounded probe");
         Class animation=objc_getClass("DBAnimationView");
         CPAHookClass([UIView class],@selector(setFrame:),(IMP)CPAFrameUIView,&gUIViewFrame);
         CPAHookClass([UIWindow class],@selector(setFrame:),(IMP)CPAFrameUIWindow,&gUIWindowFrame);
