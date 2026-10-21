@@ -11,9 +11,9 @@ assert "QUÉT MÁY" in app and "CHIA SẺ BÁO CÁO" in app
 assert "CPAReadPackages" in app and "CPAReadFilesystem" in app and "CPAReadRuntime" in app
 assert "_dyld_register_func_for_add_image" in probe
 assert "PROBE_LOADED" in probe and "DYLD_IMAGE" in probe
-assert "%hook" not in probe and "%hook" not in attribution and "setFrame:" not in probe and "_setFullScreenEnabled:" not in probe
+assert "%hook" not in probe and "%hook" not in attribution and "method_setImplementation" not in probe
 assert "PACKAGE_OWNER" in ownership and "NO_DPKG_FILE_OWNER" in ownership
-assert "GEOMETRY_SNAPSHOT" in probe
+assert "GEOMETRY_SNAPSHOT" in probe and "METHOD_IMPL_SNAPSHOT" in probe
 assert "Version: 0.3.0" in control
 assert "armTapped" in app and "PHASE_NORMAL" in app and "PHASE_ZOOM_IN" in app
 assert 'TRACE_STOP_REQUEST' in app
