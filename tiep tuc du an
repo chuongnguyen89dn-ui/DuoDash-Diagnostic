@@ -5,3 +5,17 @@ CAP NHAT 2026-10-02
 - Muc tieu: runtime geometry logger de so sanh layout CarPlay tren iPhone 8 va iPhone X.
 - Day la cong cu chan doan phuc vu he thong CarPlay, khong tach thanh san pham doc lap khi thong ke du an CarPlay.
 - Khi co log/geometry test moi, append ket qua va thiet bi/boi canh test; khong ghi thanh cong neu chua co runtime evidence.
+
+CAP NHAT 2026-10-21 — CARPLAY RESIDUAL AUDIT 0.1 (CONFIRMED CI / DEVICE UNVERIFIED)
+- Yeu cau: khong dung NewTerm; mot app/tweak doc log va tim dau vet DuoDash, DuoDashGeometryFix, Airaw, tweak CarPlay; chi doc va xuat file chia se.
+- Repo: chuongnguyen89dn-ui/DuoDash-Diagnostic; branch feature/carplay-residual-audit.
+- Source: carplay-residual-audit/CarPlayAuditApp.m, CarPlayRuntimeProbe.m, plist, build.sh, control, postinst, prerm, test_static.py.
+- Probe constructor chi ghi ten dylib do dyld nap, ten tien trinh, timestamp, danh sach UIScreen. KHONG hook/sua UIKit, Dock, safe area, scene hay UI.
+- Bao cao: dpkg installed packages + dylib/plist/filter + ten thu muc con sot + runtime image; phan biet installed/on-disk/loaded/unverified.
+- Source commit 113ea34d9bcd6e60d920c8280fea3cacdaba3dd8.
+- Build CI https://github.com/chuongnguyen89dn-ui/DuoDash-Diagnostic/actions/runs/39593691226: SUCCESS (static + arm64 iPhoneOS compile + rootless DEB package assertions + SHA); file luu branch commit 0762536492049b30501e50fd3289cd6981731acc.
+- DEB carplay-residual-audit/packages/com.chuong.carplayaudit_0.1.0_iphoneos-arm64.deb; SHA256 c8c1dab1749c45a3e0b8e18f2a3d348fa80a1269e31b44c4dd9568c2b8fbabe7.
+- Sileo publisher chuongnguyen89dn-ui/carplaydsp main commit df7b213cda3d788187d97ad6b2dc2f2bb61fc105; run https://github.com/chuongnguyen89dn-ui/carplaydsp/actions/runs/39594156325 BUILD+DEPLOY+VERIFY SUCCESS.
+- Nguon Sileo https://chuongnguyen89dn-ui.github.io/carplaydsp/ (khong thay doi package DuoFace khac).
+- THIET BI: CHUA KIEM THU. Khong duoc suy doan da lay duoc log/da xac dinh tweak xung dot.
+- Buoc tiep: nguoi dung lam moi Sileo, cai CarPlay Residual Audit, respring thu cong 1 lan, ket noi CarPlay/tai hien loi, mo app tren iPhone bam QUET MAY > CHIA SE BAO CAO, gui TXT. Neu khong co PROBE_LOADED tu CarPlay thi ghi UNVERIFIED; khong tu dong xoa/tat tweak.
