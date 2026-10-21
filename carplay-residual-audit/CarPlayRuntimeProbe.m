@@ -57,16 +57,83 @@ static void CPAImageDidLoad(const struct mach_header *mh, intptr_t slide) {
         return;
     }
 }
+
+// Passive main-thread geometry snapshots: no method swizzling, no frame/safe-area writes.
+static dispatch_source_t CPAGeometryTimer;
+static void CPAGeometryView(UIView *view, NSUInteger depth, NSUInteger *count) {
+    if (!view || !count || *count >= 18 || depth > 2) return;
+    (*count)++;
+    NSString *event = [NSString stringWithFormat:
+        @"GEOMETRY_VIEW depth=%lu class=%@ frame=%@ bounds=%@ safe=%@ hidden=%d alpha=%.2f",
+        (unsigned long)depth, NSStringFromClass(view.class),
+        NSStringFromCGRect(view.frame), NSStringFromCGRect(view.bounds),
+        NSStringFromUIEdgeInsets(view.safeAreaInsets), view.hidden, view.alpha];
+    dispatch_async(CPALogQueue, ^{ CPAAppendFile(event); });
+    for (UIView *child in view.subviews) {
+        if (*count >= 18) break;
+        CPAGeometryView(child, depth+1, count);
+    }
+}
+static void CPAGeometrySnapshot(NSUInteger cycle) {
+    UIApplication *app = UIApplication.sharedApplication;
+    NSMutableArray<UIWindow *> *windows = [NSMutableArray arrayWithArray:app.windows ?: @[]];
+    for (UIScene *scene in app.connectedScenes) {
+        if (![scene isKindOfClass:UIWindowScene.class]) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows)
+            if (![windows containsObject:window]) [windows addObject:window];
+    }
+    dispatch_async(CPALogQueue, ^{
+        CPAAppendFile([NSString stringWithFormat:
+            @"GEOMETRY_SNAPSHOT cycle=%lu windows=%lu",
+            (unsigned long)cycle,(unsigned long)windows.count]);
+    });
+    NSUInteger index = 0;
+    for (UIWindow *window in windows) {
+        if (index++ >= 10) break;
+        NSString *event = [NSString stringWithFormat:
+            @"GEOMETRY_WINDOW index=%lu class=%@ frame=%@ bounds=%@ safe=%@ screen=%@ level=%.1f hidden=%d root=%@",
+            (unsigned long)(index-1),NSStringFromClass(window.class),
+            NSStringFromCGRect(window.frame),NSStringFromCGRect(window.bounds),
+            NSStringFromUIEdgeInsets(window.safeAreaInsets),
+            NSStringFromCGRect(window.screen.bounds), window.windowLevel, window.hidden,
+            window.rootViewController ? NSStringFromClass(window.rootViewController.class) : @"none"];
+        dispatch_async(CPALogQueue, ^{ CPAAppendFile(event); });
+        NSUInteger count=0;
+        CPAGeometryView(window.rootViewController.view ?: window,0,&count);
+    }
+}
+static void CPAScheduleGeometrySamples(void) {
+    NSString *name = NSProcessInfo.processInfo.processName.lowercaseString;
+    if (![name containsString:@"carplay"] && ![name containsString:@"dashboard"]) return;
+    CPAGeometryTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,0,0,dispatch_get_main_queue());
+    if (!CPAGeometryTimer) return;
+    dispatch_source_set_timer(CPAGeometryTimer,
+      dispatch_time(DISPATCH_TIME_NOW,(int64_t)(3*NSEC_PER_SEC)),
+      (uint64_t)(5*NSEC_PER_SEC),(uint64_t)(NSEC_PER_SEC));
+    __block NSUInteger cycle=0;
+    dispatch_source_set_event_handler(CPAGeometryTimer, ^{
+        @try { CPAGeometrySnapshot(++cycle); }
+        @catch (NSException *exception) {
+            dispatch_async(CPALogQueue, ^{
+                CPAAppendFile([NSString stringWithFormat:@"GEOMETRY_UNAVAILABLE %@",exception.name]);
+            });
+        }
+        if (cycle>=90) dispatch_source_cancel(CPAGeometryTimer);
+    });
+    dispatch_resume(CPAGeometryTimer);
+}
+
 __attribute__((constructor))
 static void CPAProbeStart(void) {
     @autoreleasepool {
         CPALogQueue = dispatch_queue_create("com.chuong.carplayaudit.log", DISPATCH_QUEUE_SERIAL);
         dispatch_async(CPALogQueue, ^{
-            CPAAppendFile(@"PROBE_LOADED injection=yes version=0.1");
+            CPAAppendFile(@"PROBE_LOADED injection=yes version=0.2");
             CPAAppendFile([NSString stringWithFormat:@"BUNDLE_ID %@",
                   NSBundle.mainBundle.bundleIdentifier ?: @"(none)"]);
         });
         _dyld_register_func_for_add_image(CPAImageDidLoad);
+        dispatch_async(dispatch_get_main_queue(), ^{ CPAScheduleGeometrySamples(); });
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4*NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
             @try {
