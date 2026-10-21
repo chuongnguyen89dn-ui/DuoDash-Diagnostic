@@ -1,9 +1,9 @@
 Package: com.chuong.carplayaudit
 Name: CarPlay Residual Audit
-Version: 0.2.0
+Version: 0.3.0
 Architecture: iphoneos-arm64
 Maintainer: chuongnguyen89dn-ui
 Author: chuongnguyen89dn-ui
 Section: Utilities
 Depends: firmware (>= 16.0), ellekit | mobilesubstrate
-Description: Read-only CarPlay/DuoDash/Airaw package-ownership, runtime-injection and geometry diagnostic with touch UI, report export, and no commands.
+Description: Read-only CarPlay/DuoDash/Airaw opt-in caller attribution, package ownership and CarPlay geometry diagnostic with touch UI, report export, and no commands.

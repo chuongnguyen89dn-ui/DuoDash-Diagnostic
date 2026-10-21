@@ -11,6 +11,7 @@
 #import <unistd.h>
 #import <time.h>
 #import <math.h>
+#import <string.h>
 
 static NSString * const kCPAArm = @"/var/mobile/Documents/CarPlayAudit/AttributionEnabled";
 static NSString * const kCPATrace = @"/var/mobile/Documents/CarPlayAudit/CarPlayAttributionTrace.log";
@@ -168,7 +169,7 @@ static BOOL CPAHookClass(Class cls,SEL sel,IMP replacement,IMP *original) {
 static BOOL CPAArmIsFresh(void) {
     struct stat s;
     if (stat(kCPAArm.fileSystemRepresentation,&s)!=0) return NO;
-    return difftime(time(NULL),s.st_mtime)>=0 && difftime(time(NULL),s.st_mtime)<600;
+    return difftime(time(NULL),s.st_mtime)>=0 && difftime(time(NULL),s.st_mtime)<300;
 }
 __attribute__((constructor))
 static void CPAInstallAttribution(void) {
