@@ -7,6 +7,8 @@
 #import <unistd.h>
 #import <time.h>
 #import <string.h>
+#import <objc/runtime.h>
+#import <dlfcn.h>
 #import <dispatch/dispatch.h>
 
 static dispatch_queue_t CPALogQueue;
@@ -102,6 +104,35 @@ static void CPAGeometrySnapshot(NSUInteger cycle) {
         CPAGeometryView(window.rootViewController.view ?: window,0,&count);
     }
 }
+
+// Read-only IMP provenance: resolves the currently installed Objective-C method
+// implementation image without invoking any private method or changing hooks.
+static void CPAMethodProvenance(Class cls, SEL sel) {
+    if (!cls || !sel) return;
+    Method m=class_getInstanceMethod(cls,sel);
+    if (!m) return;
+    IMP imp=method_getImplementation(m);
+    Dl_info info={0};
+    const char *lib=(imp && dladdr((const void *)imp,&info) && info.dli_fname) ?
+                     info.dli_fname : "(unknown/trampoline)";
+    const char *symbol=info.dli_sname?: "?";
+    NSString *name=[NSString stringWithFormat:@"METHOD_IMPL_SNAPSHOT class=%@ selector=%@ image=%s symbol=%s",
+           NSStringFromClass(cls),NSStringFromSelector(sel),lib,symbol];
+    dispatch_async(CPALogQueue, ^{ CPAAppendFile(name); });
+}
+static void CPACollectMethodProvenance(void) {
+    NSArray *names=@[@"UIView",@"UIWindow",@"DBAnimationView",@"DBStatusBarWindow",
+                      @"DBApplicationSceneViewController",@"UIViewController"];
+    NSArray *selectors=@[@"setFrame:",@"setBounds:",@"safeAreaInsets",
+                          @"safeAreaInsetsDidChange",@"setAdditionalSafeAreaInsets:",
+                          @"_setFullScreenEnabled:"];
+    for (NSString *cn in names) {
+        Class c=NSClassFromString(cn);
+        if (!c) continue;
+        for (NSString *sel in selectors) CPAMethodProvenance(c,NSSelectorFromString(sel));
+    }
+}
+
 static void CPAScheduleGeometrySamples(void) {
     NSString *name = NSProcessInfo.processInfo.processName.lowercaseString;
     if (![name containsString:@"carplay"] && ![name containsString:@"dashboard"]) return;
@@ -112,7 +143,7 @@ static void CPAScheduleGeometrySamples(void) {
       (uint64_t)(5*NSEC_PER_SEC),(uint64_t)(NSEC_PER_SEC));
     __block NSUInteger cycle=0;
     dispatch_source_set_event_handler(CPAGeometryTimer, ^{
-        @try { CPAGeometrySnapshot(++cycle); }
+        @try { CPAGeometrySnapshot(++cycle); if (cycle==1) CPACollectMethodProvenance(); }
         @catch (NSException *exception) {
             dispatch_async(CPALogQueue, ^{
                 CPAAppendFile([NSString stringWithFormat:@"GEOMETRY_UNAVAILABLE %@",exception.name]);
